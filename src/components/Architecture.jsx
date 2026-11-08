@@ -1,35 +1,41 @@
 import { useState } from 'react'
-import { Database, Library, Calculator, Workflow, ShieldAlert, Timer, FileSearch, FileText, Scissors, Boxes, Filter, XCircle, CheckCircle2, ArrowRight, Lock, Ban, PauseCircle } from 'lucide-react'
-import { MODELS, DATASETS, DOCS16, PROCEDURES, ATTACK_TYPES } from '../data'
+import { Database, Library, Calculator, Workflow, ShieldAlert, Timer, FileSearch, FileText, Scissors, Boxes, Filter, XCircle, CheckCircle2, ArrowRight, Lock, Ban, PauseCircle, Search } from 'lucide-react'
+import { MODELS, DATASETS, DOCS16, PROCEDURES, ATTACK_TYPES, DECISIONS } from '../data'
 import { Section, Tabs, CodeBlock, Callout, Term } from './ui'
+import { Tech, Plain } from '../mode'
 
 const ICONS = { ShieldAlert, Timer, FileSearch }
+
+function Intro({ children }) {
+  return <p className="mb-6 max-w-3xl text-base leading-relaxed text-slate-300">{children}</p>
+}
 
 function PillarData() {
   const [m, setM] = useState('harm')
   const model = MODELS.find((x) => x.id === m)
   const Icon = ICONS[model.icon]
   return (
-    <div className="space-y-6">
+    <div>
+      <Intro>First the messy spreadsheets are cleaned up. Then three models <b className="text-white">learn from thousands of past incidents</b> so they can make quick, consistent estimates about new ones, much like an experienced analyst would.</Intro>
       <div className="grid gap-4 lg:grid-cols-5">
         <div className="card p-6 lg:col-span-2">
-          <h4 className="font-semibold text-white">Cleaning engine: what survived</h4>
-          <p className="mt-1 text-xs text-slate-500">Rows received → kept, from the expected pipeline output.</p>
+          <h4 className="font-semibold text-white">Cleaning: how many rows survived</h4>
+          <p className="mt-1 text-xs text-slate-500">Rows removed were exact duplicates, rows with no answer to learn from, or notes too short to be useful.</p>
           <div className="mt-5 space-y-4">
             {DATASETS.map((d) => {
               const pct = (d.kept / d.received) * 100
               return (
-                <div key={d.name}>
-                  <div className="mb-1 flex justify-between font-mono text-[11px]"><span className="text-slate-300">{d.name}</span><span className="text-slate-500">{d.kept.toLocaleString()} / {d.received.toLocaleString()}</span></div>
-                  <div className="flex h-2 overflow-hidden rounded-full bg-slate-800" title={`${(d.received - d.kept).toLocaleString()} removed`}>
+                <div key={d.key}>
+                  <div className="mb-1 flex justify-between text-xs"><span className="text-slate-300">{d.name}</span><span className="text-slate-500">{d.kept.toLocaleString()} of {d.received.toLocaleString()}</span></div>
+                  <div className="flex h-2 overflow-hidden rounded-full bg-slate-800">
                     <div className="bg-teal-400" style={{ width: `${pct}%` }} /><div className="bg-rose-400/70" style={{ width: `${100 - pct}%` }} />
                   </div>
                 </div>
               )
             })}
           </div>
-          <div className="mt-4 flex gap-4 text-[11px] text-slate-500"><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-teal-400" />kept</span><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-rose-400/70" />duplicates · no answer · short notes</span></div>
-          <p className="mt-4 text-xs leading-relaxed text-slate-400">Every figure is measured and written to <span className="code">output/data_quality_report.json</span>: duplicates, missing cells per column, out-of-range readings, timestamp notations, and <span className="code">missing_cells_after_cleaning = 0</span>.</p>
+          <div className="mt-4 flex gap-4 text-[11px] text-slate-500"><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-teal-400" />kept</span><span className="flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-rose-400/70" />removed</span></div>
+          <p className="mt-4 text-xs leading-relaxed text-slate-400">Every problem found and fixed is counted in a quality report, so anyone can check the cleaning was done properly.<Tech> <span className="code">output/data_quality_report.json</span></Tech></p>
         </div>
         <div className="card p-6 lg:col-span-3">
           <Tabs size="sm" active={m} onChange={setM} tabs={MODELS.map((x) => ({ id: x.id, label: x.name, icon: ICONS[x.icon] }))} />
@@ -37,27 +43,32 @@ function PillarData() {
             <div className="flex items-start gap-3">
               <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-emerald-500/10 text-emerald-400 ring-1 ring-emerald-500/30"><Icon size={22} /></span>
               <div>
-                <h4 className="text-lg font-semibold text-white">{model.name} <span className="ml-1 text-sm font-normal text-slate-500">· {model.kind}</span></h4>
-                <p className="text-xs text-slate-500">{model.estimator}</p>
+                <h4 className="text-lg font-semibold text-white">{model.name}</h4>
+                <p className="text-sm text-cyan-300">"{model.question}"</p>
               </div>
             </div>
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-              {[['Target', model.target], ['Gate to pass', model.metric], ['Feeds', model.out]].map(([k, v]) => (
-                <div key={k} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3"><dt className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{k}</dt><dd className="mt-1 text-slate-200">{v}</dd></div>
-              ))}
-            </dl>
-            <div className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Behaviour checks: must move the right way</div>
+            <p className="mt-4 text-sm leading-relaxed text-slate-300">{model.plain}</p>
+            <div className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Common-sense checks it must pass</div>
             <ul className="mt-2 grid gap-1.5 text-sm text-slate-300 sm:grid-cols-2">
               {model.checks.map((c) => <li key={c} className="flex gap-2"><CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-400" />{c}</li>)}
             </ul>
-            <div className="mt-4 flex flex-wrap gap-1.5">{model.metrics.map((x) => <span key={x} className="chip border-slate-700 font-mono text-slate-400">{x}</span>)}</div>
             {m === 'attack' && <div className="mt-4 flex flex-wrap gap-1.5">{ATTACK_TYPES.map((t) => <span key={t} className="chip border-violet-500/30 bg-violet-500/10 text-violet-300">{t}</span>)}</div>}
+            <Tech>
+              <dl className="mt-5 grid gap-3 text-xs sm:grid-cols-3">
+                {[['Type', model.tech.kind], ['Target', model.tech.target], ['Pass mark', model.tech.gate]].map(([k, v]) => (
+                  <div key={k} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3"><dt className="text-[10px] font-semibold uppercase tracking-wider text-amber-400">{k}</dt><dd className="mt-1 font-mono text-slate-200">{v}</dd></div>
+                ))}
+              </dl>
+              <div className="mt-3 flex flex-wrap gap-1.5">{model.tech.metrics.map((x) => <span key={x} className="chip border-slate-700 font-mono text-slate-400">{x}</span>)}</div>
+            </Tech>
           </div>
         </div>
       </div>
-      <Callout tone="cyan" icon={Boxes} title="Preparation lives inside the model">
-        Each model is saved as one scikit-learn <span className="code">Pipeline</span>: imputation, encoding (unseen categories handled) and the estimator together, plus a JSON feature schema. A single raw queue row can be scored with no extra preparation.
-      </Callout>
+      <div className="mt-4">
+        <Callout tone="cyan" icon={CheckCircle2} title="Tested on data it has never seen">
+          Each model is scored on a separate set of incidents kept aside during training, so we know it learned real patterns rather than memorising answers. Each has a minimum score it must reach.
+        </Callout>
+      </div>
     </div>
   )
 }
@@ -65,19 +76,19 @@ function PillarData() {
 function PillarRag() {
   const [isolated, setIsolated] = useState(true)
   const steps = [
-    { i: FileText, t: 'Extract', d: '16 PDFs, pages in order' },
-    { i: Scissors, t: 'Section', d: 'In-sequence numbered headings' },
-    { i: Scissors, t: 'Chunk', d: 'Whole sentences, overlapping' },
-    { i: Boxes, t: 'Embed', d: 'Chroma, cosine distance' },
-    { i: Filter, t: 'Filter', d: 'document_name = own PDF' },
-    { i: Calculator, t: 'Regex', d: 'MILESTONE_STATEMENT_PATTERN' },
+    { i: FileText, t: 'Read', d: 'Pull the text out of all 16 PDFs' },
+    { i: Scissors, t: 'Cut', d: 'Split into short passages, never mid-rule' },
+    { i: Boxes, t: 'Index', d: 'Make passages searchable by meaning' },
+    { i: Filter, t: 'Narrow', d: 'Search only the one PDF that matters' },
+    { i: Search, t: 'Extract', d: 'Read the deadline from the sentence' },
   ]
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div>
+      <Intro>The company's 16 PDF documents are the <b className="text-white">only source of truth</b>. Deadlines are not typed into the software. When the system needs a deadline, it looks it up in the right PDF and reads it from the text, like a person checking the rulebook.</Intro>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {steps.map(({ i: I, t, d }, k) => (
-          <div key={t} className="card card-hover relative p-4">
-            <span className="font-mono text-[10px] text-slate-600">0{k + 1}</span>
+          <div key={t} className="card card-hover p-4">
+            <span className="font-mono text-[10px] text-slate-600">STEP {k + 1}</span>
             <I size={18} className="mt-1 text-violet-400" />
             <div className="mt-2 text-sm font-semibold text-white">{t}</div>
             <div className="text-xs text-slate-500">{d}</div>
@@ -85,35 +96,42 @@ function PillarRag() {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <div className="card p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h4 className="font-semibold text-white">Strict corpus isolation</h4>
-            <div className="flex rounded-lg border border-slate-800 p-0.5 text-xs">
-              <button onClick={() => setIsolated(false)} className={`rounded-md px-3 py-1.5 ${!isolated ? 'bg-rose-500/15 text-rose-300' : 'text-slate-400'}`}>Global search</button>
-              <button onClick={() => setIsolated(true)} className={`rounded-md px-3 py-1.5 ${isolated ? 'bg-emerald-500/15 text-emerald-300' : 'text-slate-400'}`}>Restricted</button>
-            </div>
+          <h4 className="font-semibold text-white">Why look in only one PDF?</h4>
+          <p className="mt-1 text-sm text-slate-400">The three rulebooks were written from the same template, so many sentences are identical. Ask "what is India's deadline?" and compare:</p>
+          <div className="mt-4 flex rounded-lg border border-slate-800 p-0.5 text-xs sm:w-fit">
+            <button onClick={() => setIsolated(false)} className={`flex-1 rounded-md px-3 py-1.5 ${!isolated ? 'bg-rose-500/15 text-rose-300' : 'text-slate-400'}`}>Search all PDFs</button>
+            <button onClick={() => setIsolated(true)} className={`flex-1 rounded-md px-3 py-1.5 ${isolated ? 'bg-emerald-500/15 text-emerald-300' : 'text-slate-400'}`}>Search India PDF only</button>
           </div>
-          <p className="mt-2 font-mono text-xs text-slate-500">query: DEADLINE_QUESTION_TEMPLATE(PROCEDURE_INDIA_CYBER_INCIDENT)</p>
           <div className="mt-4 space-y-2">
             {(isolated
-              ? [[PROCEDURES[2].doc, 0.18, true], [PROCEDURES[2].doc, 0.22, true], [PROCEDURES[2].doc, 0.27, true]]
-              : [[PROCEDURES[0].doc, 0.17, false], [PROCEDURES[2].doc, 0.18, true], [PROCEDURES[1].doc, 0.19, false]]
-            ).map(([doc, dist, ok], i) => (
-              <div key={i} className={`flex items-center justify-between gap-3 rounded-lg border p-3 text-xs ${ok ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-rose-500/30 bg-rose-500/5'}`}>
-                <span className="flex min-w-0 items-center gap-2">{ok ? <CheckCircle2 size={14} className="shrink-0 text-emerald-400" /> : <XCircle size={14} className="shrink-0 text-rose-400" />}<span className="truncate font-mono text-slate-300">{doc}</span></span>
-                <span className="font-mono text-slate-500">d={dist}</span>
+              ? [[PROCEDURES[2], true], [PROCEDURES[2], true], [PROCEDURES[2], true]]
+              : [[PROCEDURES[0], false], [PROCEDURES[2], true], [PROCEDURES[1], false]]
+            ).map(([p, ok], i) => (
+              <div key={i} className={`flex items-center gap-2 rounded-lg border p-3 text-sm ${ok ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-rose-500/30 bg-rose-500/5'}`}>
+                {ok ? <CheckCircle2 size={15} className="shrink-0 text-emerald-400" /> : <XCircle size={15} className="shrink-0 text-rose-400" />}
+                <span className="text-slate-300">Result {i + 1}: passage from the <b>{p.title}</b> rulebook</span>
               </div>
             ))}
           </div>
-          <p className="mt-4 text-sm text-slate-400">
+          <p className="mt-4 text-sm text-slate-300">
             {isolated
-              ? 'Every passage comes from Procedure 03’s own PDF, so its milestones are read from its own words.'
-              : 'The procedures share a template. The nearest passage belongs to Procedure 01, so CERT-In would be given the EU deadline. Confident, and wrong.'}
+              ? 'Every answer comes from the India rulebook. Correct.'
+              : 'The top answer is from the EU rulebook, so India’s deadline would be read wrongly. It looks confident but it’s the wrong law.'}
           </p>
         </div>
         <div className="space-y-4">
-          <CodeBlock title="knowledge/procedure_reading.py (shape)" code={`hits = search_documents(
+          <Callout tone="rose" icon={Ban} title="Golden rule: no deadlines in the code">
+            The software never contains a deadline number. If a rulebook changes, the new deadline is picked up automatically. If a rulebook can't be read, the system stops with an error instead of guessing.
+          </Callout>
+          <Plain>
+            <Callout tone="cyan" icon={Lock} title="One document is off-limits to the chat">
+              The past-cases casebook records which incidents were reported without telling customers. That is confidential, so the chat assistant never reads it.
+            </Callout>
+          </Plain>
+          <Tech>
+            <CodeBlock title="knowledge/procedure_reading.py (shape)" code={`hits = search_documents(
     collection,
     [config.DEADLINE_QUESTION_TEMPLATE.format(code=code)],
     config.PROCEDURE_RESULT_COUNT,
@@ -125,29 +143,34 @@ for m in re.finditer(config.MILESTONE_STATEMENT_PATTERN, text):
     milestones.append({
         "milestone": m["milestone"],
         "hours": int(m["hours"]),            # from the PDF
-        "clock_start_phrase": phrase,
         "clock_start_column": config.CLOCK_START_COLUMN_BY_PHRASE[phrase],
     })
 
 if not milestones:
     raise ValueError(config.PROCEDURE_UNREAD_MESSAGE)`} />
-          <Callout tone="rose" icon={Ban} title="Zero hardcoding rule">
-            No procedure deadline appears in code or config. Config holds only the patterns and the two clock-start phrases. A hardcoded number that happens to match still counts as wrong.
-          </Callout>
+          </Tech>
         </div>
       </div>
 
-      <div className="card p-6">
+      <div className="card mt-6 p-6">
         <h4 className="font-semibold text-white">The 16 documents</h4>
         <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
           {DOCS16.map((d) => (
-            <div key={d.name} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-[11px] ${d.group === 'Restricted' ? 'border-rose-500/30 bg-rose-500/5' : 'border-slate-800 bg-slate-950/40'}`}>
+            <div key={d.name} className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs ${d.group === 'Restricted' ? 'border-rose-500/30 bg-rose-500/5' : 'border-slate-800 bg-slate-950/40'}`}>
               {d.group === 'Restricted' ? <Lock size={13} className="shrink-0 text-rose-400" /> : <FileText size={13} className={`shrink-0 ${d.group === 'Procedure' ? 'text-cyan-400' : d.group === 'Playbook' ? 'text-violet-400' : 'text-slate-500'}`} />}
-              <span className="truncate font-mono text-slate-300" title={d.name}>{d.name}</span>
+              <span className="min-w-0">
+                <span className="block truncate text-slate-200">{d.plain}</span>
+                <Tech><span className="block truncate font-mono text-[10px] text-slate-500" title={d.name}>{d.name}</span></Tech>
+              </span>
             </div>
           ))}
         </div>
-        <p className="mt-3 text-xs text-slate-500"><Lock size={11} className="inline text-rose-400" /> The casebook is excluded from chat (<span className="code">CHAT_EXCLUDED_DOCUMENTS</span>): it records which incidents went to a regulator without customers being told.</p>
+        <div className="mt-3 flex flex-wrap gap-4 text-[11px] text-slate-500">
+          <span className="flex items-center gap-1.5"><FileText size={11} className="text-cyan-400" />rulebooks</span>
+          <span className="flex items-center gap-1.5"><FileText size={11} className="text-slate-500" />company policies</span>
+          <span className="flex items-center gap-1.5"><FileText size={11} className="text-violet-400" />playbooks (what to do per attack type)</span>
+          <span className="flex items-center gap-1.5"><Lock size={11} className="text-rose-400" />confidential</span>
+        </div>
       </div>
     </div>
   )
@@ -155,84 +178,113 @@ if not milestones:
 
 function PillarTools() {
   const tools = [
-    { t: 'select_applicable_procedures', d: 'Three independent tests; grounds per code; campaign-only significance flag.' },
-    { t: 'compute_procedure_deadlines', d: 'Start = incident value of the reading’s column; due = start + hours read from the PDF.' },
-    { t: 'compare_effort_with_deadline', d: 'hours_available = hours_remaining − FILING_RESERVE_HOURS; fits only if effort ≤ available.' },
-    { t: 'estimate_containment_effort', d: 'Containment planned at snapshot in hub time; ×SENSITIVE_DATA_EFFORT_MULTIPLIER once.' },
-    { t: 'compute_final_report_due', d: 'filing_submitted_at + N calendar months; earliest across procedures, else None.' },
-    { t: 'rank_incident_queue', d: 'Running clocks first, nearest (overdue = nearest); then no-clock by harm probability.' },
+    { t: 'Which laws apply?', d: 'Checks the three rulebooks’ conditions one by one and writes down why each one applies.', fn: 'select_applicable_procedures' },
+    { t: 'When is each deadline?', d: 'Start time + the hours from the PDF = due time. Then counts the hours left from the snapshot moment.', fn: 'compute_procedure_deadlines' },
+    { t: 'Which deadline comes first?', d: 'Picks the earliest running deadline across every law. That one sets the pace.', fn: 'compute_procedure_deadlines' },
+    { t: 'Is there enough time?', d: 'Hours left, minus a small filing buffer, compared with the hours the work will take.', fn: 'compare_effort_with_deadline' },
+    { t: 'When is the final report due?', d: 'Counted in months from the day the first report was actually sent.', fn: 'compute_final_report_due' },
+    { t: 'What should we work on first?', d: 'Sorts the whole list: nearest deadline first (overdue at the very top), then the rest by risk.', fn: 'rank_incident_queue' },
   ]
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="space-y-3">
-        {tools.map((x) => (
-          <div key={x.t} className="card card-hover p-4">
-            <div className="font-mono text-sm text-amber-300">{x.t}()</div>
-            <p className="mt-1 text-sm text-slate-400">{x.d}</p>
+    <div>
+      <Intro>All calculations are done by <b className="text-white">ordinary, predictable code</b>. Give it the same incident and it gives exactly the same answer every time, so an auditor can check it. Only the finished answers are passed to the AI.</Intro>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+          {tools.map((x) => (
+            <div key={x.t} className="card card-hover p-4">
+              <div className="font-semibold text-amber-300">{x.t}</div>
+              <p className="mt-1 text-sm text-slate-400">{x.d}</p>
+              <Tech><div className="mt-1 font-mono text-[11px] text-slate-500">{x.fn}()</div></Tech>
+            </div>
+          ))}
+        </div>
+        <div className="space-y-4">
+          <div className="card p-6">
+            <h4 className="font-semibold text-white">Worked example (made-up numbers)</h4>
+            <div className="mt-4 space-y-2 font-mono text-sm">
+              {[
+                ['Deadline due', 'Thu 14:00'],
+                ['Snapshot time', 'Thu 02:00'],
+                ['Hours left', '12.0 h'],
+                ['Filing buffer', '− 2.0 h'],
+                ['Time available', '10.0 h'],
+                ['Work needed (with sensitive-data extra)', '13.5 h'],
+              ].map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-4 border-b border-slate-800 pb-2"><span className="font-sans text-slate-400">{k}</span><span className="text-slate-100">{v}</span></div>
+              ))}
+              <div className="flex items-center gap-2 pt-1 font-sans text-rose-300"><XCircle size={16} />Doesn't fit. The briefing will say the desk must handle this one differently.</div>
+            </div>
           </div>
-        ))}
-      </div>
-      <div className="space-y-4">
-        <CodeBlock title="tools/deadline_tools.py (shape)" code={`snapshot = parse_utc(config.SNAPSHOT_AT_UTC)   # never datetime.now()
+          <Tech>
+            <CodeBlock title="tools/deadline_tools.py (shape)" code={`snapshot = parse_utc(config.SNAPSHOT_AT_UTC)   # never datetime.now()
 
 for code, reading in procedure_readings.items():
     for m in reading["milestones"]:
         started = incident_profile.get(m["clock_start_column"])
         if not started:                       # awaiting confirmation
-            line = {..., "clock_started": False,
-                    "status": config.CLOCK_NOT_STARTED_MESSAGE}
+            line = {..., "clock_started": False}
         else:
             due = parse_utc(started) + timedelta(hours=m["hours"])
             left = (due - snapshot).total_seconds() / 3600
-            line = {..., "clock_started": True,
-                    "hours_remaining": round(left, 2),
-                    "overdue": left <= 0}     # nought is overdue
+            line = {..., "hours_remaining": round(left, 2),
+                    "overdue": left <= 0}     # zero counts as overdue
 
-running = [l for l in lines if l["clock_started"]]
 earliest = min(running, key=lambda l: l["hours_remaining"], default=None)`} />
-        <Callout tone="amber" icon={Calculator} title="Calculations finish before the prompt">
-          Hours remaining, campaign sums, the sensitive-data multiplier and the earliest deadline are all settled in pure Python before any prompt is built. Agents receive them as finished facts. This is the <Term k="boundary" />.
-        </Callout>
+          </Tech>
+          <Callout tone="amber" icon={Calculator} title="The AI never does maths">
+            By the time the AI sees an incident, every number is already worked out. See <Term k="boundary" />.
+          </Callout>
+        </div>
       </div>
     </div>
   )
 }
 
 function PillarAgents() {
-  const rows = [
-    ['RECORD ONLY', '5 + 0', 5, 'RECORDED', 'emerald'],
-    ['NOTIFY REGULATOR', '5 + 1', 6, 'NOTIFIED', 'amber'],
-    ['NOTIFY REGULATOR AND CUSTOMERS', '5 + 2', 7, 'NOTIFIED_AND_DISCLOSED', 'rose'],
-  ]
   const tone = { emerald: 'text-emerald-300', amber: 'text-amber-300', rose: 'text-rose-300' }
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="card p-6">
-        <h4 className="font-semibold text-white">Five pre-gate agents, one call each</h4>
-        <div className="mt-5 flex flex-wrap items-center gap-2 text-xs">
-          {['Intake Planner', 'Harm Analyst', 'Attack Analyst', 'Reporting Duty Advisor', 'Incident Writer'].map((a, i, arr) => (
-            <span key={a} className="flex items-center gap-2"><span className="rounded-lg border border-violet-500/30 bg-violet-500/10 px-2.5 py-1.5 text-violet-200">{a}</span>{i < arr.length - 1 && <ArrowRight size={14} className="text-slate-600" />}</span>
-          ))}
-          <ArrowRight size={14} className="text-slate-600" />
-          <span className="flex items-center gap-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-amber-200"><PauseCircle size={14} />DPO Gate</span>
-        </div>
-        <p className="mt-5 text-sm leading-relaxed text-slate-400">
-          <Term k="gate" />: a LangGraph <span className="code">interrupt()</span> with a SQLite checkpointer at <span className="code">database/checkpoint.db</span>. The process can be killed while it waits, and the DPO's decision resumes the same thread later.
-        </p>
-        <a href="#workflow" className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-cyan-300 hover:text-cyan-200">Open the interactive workflow <ArrowRight size={14} /></a>
-      </div>
-      <div className="card overflow-hidden">
-        <div className="border-b border-slate-800 px-6 py-4"><h4 className="font-semibold text-white">Call budget: a hard audit cap</h4></div>
-        <table className="w-full text-sm">
-          <thead className="text-left text-[11px] uppercase tracking-wider text-slate-500"><tr><th className="px-6 py-2 font-medium">Disposition</th><th className="px-2 py-2 font-medium">Calls</th><th className="px-6 py-2 font-medium">Status</th></tr></thead>
-          <tbody className="divide-y divide-slate-800">
-            {rows.map(([d, f, n, s, c]) => (
-              <tr key={d}><td className={`px-6 py-3 font-medium ${tone[c]}`}>{d}</td><td className="px-2 py-3 font-mono text-slate-300">{f} = <b className="text-white">{n}</b></td><td className="px-6 py-3 font-mono text-xs text-slate-400">{s}</td></tr>
+    <div>
+      <Intro>Five AI helpers work like a small team writing a briefing. Each writes <b className="text-white">one part</b>, using only the facts it is given. Then the system <b className="text-white">stops and waits</b> for the Data Protection Officer to decide.</Intro>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="card p-6">
+          <h4 className="font-semibold text-white">The five helpers, in order</h4>
+          <ol className="mt-4 space-y-2 text-sm">
+            {[
+              ['Planner', 'What do we need to check?'],
+              ['Risk explainer', 'Why is the risk high, medium or low?'],
+              ['Attack explainer', 'How sure are we about the attack type?'],
+              ['Reporting-duties explainer', 'Who must be told, and by when?'],
+              ['Report writer', 'Summary and a recommended action'],
+            ].map(([a, q], i) => (
+              <li key={a} className="flex items-center gap-3 rounded-lg border border-violet-500/20 bg-violet-500/5 px-3 py-2">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-violet-500/20 text-xs font-bold text-violet-200">{i + 1}</span>
+                <span><b className="text-violet-200">{a}</b> <span className="text-slate-400">· {q}</span></span>
+              </li>
             ))}
-          </tbody>
-        </table>
-        <p className="px-6 py-4 text-xs text-slate-500"><span className="code">GET /incidents/&#123;id&#125;/calls</span> compares <span className="code">call_count</span> with <span className="code">expected_call_count</span>, so a run that spent the wrong number of calls shows up at a glance.</p>
+            <li className="flex items-center gap-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2"><PauseCircle size={18} className="text-amber-300" /><span className="text-amber-100"><b>Stop:</b> wait for the Data Protection Officer</span></li>
+          </ol>
+          <a href="#workflow" className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-cyan-300 hover:text-cyan-200">See it run step by step <ArrowRight size={14} /></a>
+        </div>
+        <div className="card overflow-hidden">
+          <div className="border-b border-slate-800 px-6 py-4">
+            <h4 className="font-semibold text-white">The DPO's three choices</h4>
+            <p className="mt-1 text-xs text-slate-500">Each choice uses a fixed number of AI calls, so cost is predictable and checked.</p>
+          </div>
+          <div className="divide-y divide-slate-800">
+            {DECISIONS.map((d) => (
+              <div key={d.id} className="px-6 py-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className={`font-semibold ${tone[d.tone]}`}>{d.label}</span>
+                  <span className="chip border-slate-700 text-slate-300">{d.calls} AI calls</span>
+                </div>
+                <p className="mt-1 text-sm text-slate-400">{d.plain}</p>
+                <Tech><p className="mt-1 font-mono text-[11px] text-slate-500">{d.code} → status {d.status}</p></Tech>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
+      <div className="mt-4"><Callout tone="amber" icon={PauseCircle} title="The pause is saved"><Term k="gate" /> If the computer restarts while waiting, nothing is lost.<Tech> (LangGraph interrupt + SQLite checkpointer at <span className="code">database/checkpoint.db</span>.)</Tech></Callout></div>
     </div>
   )
 }
@@ -240,13 +292,13 @@ function PillarAgents() {
 export default function Architecture() {
   const [tab, setTab] = useState('data')
   const tabs = [
-    { id: 'data', label: '1 · Data & Models', icon: Database },
-    { id: 'rag', label: '2 · Knowledge Base', icon: Library },
-    { id: 'tools', label: '3 · Deterministic Tools', icon: Calculator },
-    { id: 'agents', label: '4 · Agents & Gate', icon: Workflow },
+    { id: 'data', label: '1 · Learn from the past', icon: Database },
+    { id: 'rag', label: '2 · Read the rulebooks', icon: Library },
+    { id: 'tools', label: '3 · Do the maths', icon: Calculator },
+    { id: 'agents', label: '4 · AI helpers + sign-off', icon: Workflow },
   ]
   return (
-    <Section id="architecture" kicker="Solution" title="Four-pillar architecture" lead="Each pillar hands finished facts to the next. By the time a language model is involved, nothing is left to calculate.">
+    <Section id="architecture" kicker="How it works" title="Four building blocks" lead="Each block hands finished facts to the next. By the time AI is involved, there is nothing left to calculate. Click through the four tabs.">
       <Tabs tabs={tabs} active={tab} onChange={setTab} />
       <div key={tab} className="mt-6 animate-fadeIn">
         {tab === 'data' && <PillarData />}
