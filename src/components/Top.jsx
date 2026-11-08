@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Shield, Menu, X, Brain, Calculator, UserCheck, ArrowRight, Clock, Globe2, BookOpen, Code2 } from 'lucide-react'
+import { Shield, Menu, X, Brain, Calculator, UserCheck, ArrowRight, Clock, Globe2, BookOpen, Code2, Download } from 'lucide-react'
+
+const PDF_URL = './BreachWatch-AI-Project-Overview.pdf'
 import { HUBS, SNAPSHOT_AT_UTC } from '../data'
 import { Term } from './ui'
 import { useMode } from '../mode'
@@ -40,6 +42,7 @@ export function Nav() {
           ))}
         </div>
         <div className="flex items-center gap-2">
+          <a href={PDF_URL} download className="hidden items-center gap-1.5 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-300 transition hover:border-amber-500/50 hover:text-amber-300 md:inline-flex" title="Download the project overview as a PDF"><Download size={13} />PDF</a>
           <div className="hidden sm:block"><ModeSwitch /></div>
           <button className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 xl:hidden" onClick={() => setOpen(true)} aria-label="Open menu"><Menu size={22} /></button>
         </div>
@@ -53,6 +56,7 @@ export function Nav() {
               <button onClick={() => setOpen(false)} className="rounded-lg p-2 hover:bg-slate-800" aria-label="Close menu"><X size={20} /></button>
             </div>
             <div className="mb-4"><ModeSwitch full /></div>
+            <a href={PDF_URL} download className="mb-3 flex items-center gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2.5 text-sm font-medium text-amber-200"><Download size={15} />Download PDF overview</a>
             {LINKS.map(([id, l]) => (
               <a key={id} href={`#${id}`} onClick={() => setOpen(false)} className="block rounded-lg px-3 py-3 text-slate-300 hover:bg-slate-900 hover:text-cyan-300">{l}</a>
             ))}
@@ -96,6 +100,7 @@ export function Hero() {
         <div className="mt-8 flex flex-wrap gap-3">
           <a href="#story" className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400">Start with the story <ArrowRight size={16} /></a>
           <a href="#walkthrough" className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-200 transition hover:border-cyan-500/50 hover:text-cyan-300">Follow one incident</a>
+          <a href={PDF_URL} download className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-5 py-2.5 text-sm font-semibold text-amber-200 transition hover:bg-amber-500/20"><Download size={16} />Download PDF overview</a>
         </div>
         <p className="mt-4 text-xs text-slate-500">Tip: use the <b className="text-slate-300">Plain / Technical</b> switch at the top to show or hide engineering detail.</p>
 
